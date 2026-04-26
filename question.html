@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SAT Question</title>
+<style>
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background: #f3f3f3;
+        color: #111;
+        overflow-x: hidden;
+    }
+
+    .topbar {
+        height: 88px;
+        background: #fff;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+    }
+
+    .top-left {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        color: #444;
+    }
+
+    .timer {
+        font-family: Arial, sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: calc(100vh - 88px);
+    }
+
+    .passage-side {
+        background: #fafafa;
+        border-right: 1px solid #ddd;
+        padding: 34px 48px 120px;
+    }
+
+    .question-side {
+        background: #f7f7f7;
+        padding: 28px 24px 120px;
+    }
+
+    .qid-box {
+        display: inline-block;
+        background: #111;
+        color: white;
+        padding: 10px 16px;
+        font-family: Arial, sans-serif;
+        font-weight: 700;
+        margin-bottom: 22px;
+    }
+
+    .passage-text {
+        font-size: 18px;
+        line-height: 1.65;
+        white-space: pre-wrap;
+    }
+
+    .question-count {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        margin-bottom: 14px;
+        color: #333;
+    }
+
+    .prompt {
+        font-size: 18px;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    .choice {
+        background: white;
+        border: 2px solid #222;
+        border-radius: 18px;
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        cursor: pointer;
+    }
+
+    .choice.selected {
+        border-width: 3px;
+    }
+
+    .radio {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border: 2px solid #111;
+        border-radius: 50%;
+        margin-top: 2px;
+        position: relative;
+        background: white;
+    }
+
+    .choice.selected .radio::after {
+        content: "";
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #111;
+        position: absolute;
+        top: 6px;
+        left: 6px;
+    }
+
+    .choice-letter {
+        font-family: Arial, sans-serif;
+        font-weight: 700;
+        width: 18px;
+        min-width: 18px;
+        margin-top: 2px;
+    }
+
+    .choice-text {
+        flex: 1;
+        font-size: 16px;
+        line-height: 1.45;
+    }
+
+    .bottom-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #fff;
+        border-top: 1px solid #ddd;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 20;
+    }
+
+    .left-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .q-toggle {
+        background: #111;
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        padding: 14px 18px;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 14px;
+        padding: 14px 24px;
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .btn-check { background: #bfe7fb; }
+    .btn-next { background: #fff; border: 1px solid #ccc; }
+
+    .question-list {
+        position: fixed;
+        left: 16px;
+        bottom: 76px;
+        width: 240px;
+        max-height: 360px;
+        overflow: auto;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        padding: 10px;
+        display: none;
+        z-index: 25;
+    }
+
+    .question-list.show {
+        display: block;
+    }
+
+    .q-item {
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+    }
+
+    .q-item:hover, .q-item.active {
+        background: #eef3ff;
+    }
+
+    .popup {
+        position: fixed;
+        right: 24px;
+        bottom: 90px;
+        width: 420px;
+        max-width: calc(100vw - 48px);
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 18px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+        padding: 18px;
+        display: none;
+        z-index: 30;
+    }
+
+    .popup.show {
+        display: block;
+    }
+
+    .popup-title {
+        font-family: Arial, sans-serif;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .popup-text {
+        font-size: 15px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    .correct-note {
+        margin-top: 12px;
+        font-family: Arial, sans-serif;
+        font-weight: 700;
+        color: #0a7a28;
+    }
+
+
+
+.choice {
+    position: relative;
+    padding-right: 58px;
+    align-items: center;
+    padding: 16px 60px 16px 18px;
+}
+
+.elim-btn {
+    position: absolute;
+    right: 12px;   
+    top: 50%;
+    transform: translateY(-50%);
+    border: 1px solid #aaa;
+    background: #fff;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.choice.eliminated::after {
+    content: "";
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 50%;
+    height: 2px;
+    background: #111;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.choice.eliminated .choice-text,
+.choice.eliminated .choice-letter {
+    text-decoration: none;
+    opacity: 0.45;
+}
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="top-left" id="setLabel">Loading...</div>
+        <div class="timer" id="timer">00:00</div>
+        <div style="width:120px;"></div>
+    </div>
+
+    <div class="layout">
+        <div class="passage-side">
+            <div class="qid-box" id="qidBox">ID:</div>
+            <div class="passage-text" id="passageText"></div>
+        </div>
+
+        <div class="question-side">
+            <div class="question-count" id="questionCount"></div>
+            <div class="prompt" id="promptText"></div>
+            <div id="choicesWrap"></div>
+        </div>
+    </div>
+
+    <div class="question-list" id="questionList"></div>
+
+    <div class="popup" id="feedbackPopup">
+        <div class="popup-title" id="popupTitle"></div>
+        <div class="popup-text" id="popupText"></div>
+        <div class="correct-note" id="correctNote"></div>
+    </div>
+
+    <div class="bottom-bar">
+        <div class="left-controls">
+            <button class="q-toggle" id="toggleBtn">1 of 1 ▼</button>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-check" id="checkBtn">Check</button>
+            <button class="btn btn-next" id="nextBtn">Next</button>
+        </div>
+    </div>
+
+<script>
+let params = new URLSearchParams(window.location.search);
+let mode = params.get("mode") || "review";
+let value = params.get("value") || "all";
+let qid = params.get("id") || "";
+
+let questions = [];
+let currentIndex = 0;
+let selected = null;
+let seconds = 0;
+
+let eliminated = {};
+
+function resetTimer() {
+    seconds = 0;
+    document.getElementById("timer").innerText = "00:00";
+}
+
+
+function formatTime(total) {
+    const m = String(Math.floor(total / 60)).padStart(2, "0");
+    const s = String(total % 60).padStart(2, "0");
+    return `${m}:${s}`;
+}
+
+setInterval(() => {
+    seconds++;
+    document.getElementById("timer").innerText = formatTime(seconds);
+}, 1000);
+
+function getSetName() {
+    if (mode === "skill") return value.replace(/-/g, " ");
+    if (mode === "domain") return value.replace(/-/g, " ");
+    return "review all topics";
+}
+
+function titleCase(s) {
+    return s.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function renderQuestionList() {
+    const list = document.getElementById("questionList");
+    list.innerHTML = "";
+
+    questions.forEach((q, i) => {
+        const div = document.createElement("div");
+        div.className = "q-item" + (i === currentIndex ? " active" : "");
+        div.textContent = `${i + 1}. ${q.id}`;
+div.onclick = () => {
+    goToQuestion(i);
+    list.classList.remove("show");
+};
+        list.appendChild(div);
+    });
+}
+
+function renderChoices(q) {
+    const wrap = document.getElementById("choicesWrap");
+    wrap.innerHTML = "";
+
+    if (!eliminated[q.id]) eliminated[q.id] = {};
+
+    q.choices.forEach(([letter, text]) => {
+        const isEliminated = eliminated[q.id][letter];
+
+        const choice = document.createElement("div");
+        choice.className =
+            "choice" +
+            (selected === letter ? " selected" : "") +
+            (isEliminated ? " eliminated" : "");
+
+        choice.onclick = () => {
+            if (isEliminated) return;
+            selected = letter;
+            renderChoices(q);
+        };
+
+        choice.innerHTML = `
+            <div class="radio"></div>
+            <div class="choice-letter">${letter}</div>
+            <div class="choice-text">${text}</div>
+            <button class="elim-btn" title="Eliminate">✕</button>
+        `;
+
+        choice.querySelector(".elim-btn").onclick = (e) => {
+            e.stopPropagation();
+            eliminated[q.id][letter] = !eliminated[q.id][letter];
+
+            if (selected === letter) selected = null;
+
+            renderChoices(q);
+        };
+
+        wrap.appendChild(choice);
+    });
+}
+
+function render() {
+    if (!questions.length) return;
+
+    const q = questions[currentIndex];
+
+    document.getElementById("qidBox").innerText = `ID: ${q.id}`;
+    document.getElementById("passageText").innerText = q.text || "";
+    document.getElementById("promptText").innerText = q.prompt || "Which choice is correct?";
+    document.getElementById("setLabel").innerText = `${titleCase(getSetName())}`;
+    document.getElementById("questionCount").innerText = `${currentIndex + 1} of ${questions.length}`;
+    document.getElementById("toggleBtn").innerText = `${currentIndex + 1} of ${questions.length} ▼`;
+
+    renderChoices(q);
+    renderQuestionList();
+}
+
+function showPopup(title, text, correctAnswer) {
+    document.getElementById("popupTitle").innerText = title;
+    document.getElementById("popupText").innerText = text;
+    document.getElementById("correctNote").innerText = correctAnswer ? `Correct answer: ${correctAnswer}` : "";
+    document.getElementById("feedbackPopup").classList.add("show");
+}
+
+function hidePopup() {
+    document.getElementById("feedbackPopup").classList.remove("show");
+}
+
+function checkAnswer() {
+    const q = questions[currentIndex];
+    if (!selected) return;
+
+    if (selected === q.answer) {
+        showPopup("Correct", "", q.answer);
+    } else {
+        showPopup(
+            `Incorrect — Difficulty: ${q.difficulty}`,
+            q.rationale,
+            q.answer
+        );
+    }
+}
+function goToQuestion(i) {
+    currentIndex = i;
+    selected = null;
+    hidePopup();
+    resetTimer();
+    render();
+    updateUrl();
+}
+
+function nextQuestion() {
+    if (currentIndex < questions.length - 1) {
+        goToQuestion(currentIndex + 1);
+    }
+}
+
+function updateUrl() {
+    const url = `/question?mode=${encodeURIComponent(mode)}&value=${encodeURIComponent(value)}&id=${encodeURIComponent(questions[currentIndex].id)}`;
+    window.history.replaceState({}, "", url);
+}
+
+document.getElementById("checkBtn").onclick = checkAnswer;
+document.getElementById("nextBtn").onclick = nextQuestion;
+document.getElementById("toggleBtn").onclick = () => {
+    document.getElementById("questionList").classList.toggle("show");
+};
+
+fetch(`/api/questions?mode=${encodeURIComponent(mode)}&value=${encodeURIComponent(value)}&id=${encodeURIComponent(qid)}`)
+    .then(r => r.json())
+.then(data => {
+    questions = data.questions || [];
+    currentIndex = data.current_index || 0;
+    resetTimer();
+    render();
+    if (questions.length) updateUrl();
+});
+</script>
+</body>
+</html>
